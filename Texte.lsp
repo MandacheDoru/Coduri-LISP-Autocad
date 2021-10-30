@@ -187,3 +187,39 @@
   (setvar "CLAYER" CURRENTLAYER)
   (princ)
 )
+
+;; --------------------------------------------------------------- ;;
+;  Incadreaza_Toate_Textele.lsp
+;  ----------------------------
+;     ss               - setul de selectie cu entitatile de tip text
+;     nameEntity       - numele entitatii
+;     assocEntity      - lista de propietati asociata
+;     nameLayer        - numele layer-ului
+;; --------------------------------------------------------------- ;;
+
+(defun c:ITT ( / suffixLayer ss nameEntity assocEntity nameLayer )
+  (if (not bns_tcircle) (load "acettxt.lsp"))
+  (setq suffixLayer "_BoundingBox")                                         ; defineste un sufix pentru layer-ul textelor incadrate
+
+  (if (setq ss (ssget "_X" '((0 . "TEXT,MTEXT,ATTDEF"))))                   ; selecteaza toate textele din desen
+    (while (> (sslength ss) 0)                                              ; parcurge setul de selectie atata timp cat nu este gol
+      (setq nameEntity  (ssname ss 0)                                       ; intoarce prima intrare din setul de selectie
+        assocEntity (entget nameEntity))                                    ; si lista cu propietati
+
+      (if (not (tblsearch "LAYER" (setq nameLayer                           ; testeaza daca exista layer-ul
+                                    (strcat (cdr (assoc 8 assocEntity))     ; adauga prefixul
+                                            suffixLayer))))
+        (command "_LAYER" "_N" nameLayer "")                                ; creaza un layer nou
+      )
+
+      (bns_tcircle (ssadd nameEntity)  "Variable" "Rectangles" "" 0.35)     ; adauga dreptunghiul care incadreaza textul
+      (command "_CHPROP" (entlast) "" "_LA" nameLayer "")                   ; si il muta in layer
+
+      (setq ss (ssdel nameEntity ss))                                       ; sterge intrarea din setul de selectie
+    )
+
+  )
+  (princ)
+)
+
+; end ITT ------------------------------------------------------------
